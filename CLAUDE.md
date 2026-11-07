@@ -105,6 +105,25 @@ Env: copy `.env.example` → `.env.local` with `EXPO_PUBLIC_SUPABASE_URL` / `EXP
     event shows "Any record of the last …? Yes / No". No → stored in local kv
     (`svc_prompt_dismissed:<vehicle>:<type>`), never asked again on this device (not synced; a second
     device may ask once). Reminders still run (anchored on the baseline) unless turned off in the rule.
+26. **On-device OCR: `@infinitered/react-native-mlkit-text-recognition`** (Expo module, bundled ML Kit
+    Latin model → offline, returns lines with boxes). Its `@infinitered/react-native-mlkit-core` is pinned
+    **exactly 3.1.0** (the version it depends on) to avoid a duplicate native module; `expo-image` is its
+    required peer. Never upgrade one without the other (`npx expo-doctor` catches it).
+27. **OCR parsing is pure TS in `src/domain/ocr/`** (tested on fixture lines):
+    plate = LETTERS+DIGITS coercion with O/0, I/1, S/5, B/8… fixes, two-row plates joined, province
+    words ignored, biggest text wins; reg card = label "Registration No" → plate, MOTOR CYCLE/CAR… → type,
+    maker; odometer = biggest 4–7-digit whole number, trip meter (decimal) and km/h scales penalised,
+    plausibility vs last reading; pump = labels (Sale/Volume/Price) else any triple with L × R ≈ T (2%).
+28. **Pump fallback to Claude**: only when the on-device read is not consistent. Edge Function `ocr-pump`
+    (secret `ANTHROPIC_API_KEY`) uses `npm:@anthropic-ai/sdk@1.3.0`, model `claude-opus-5-5`, effort
+    `medium`, structured output (JSON schema with nullable `rate_per_litre`/`litres`/`total`),
+    `fallbacks: "default"` (beta `server-side-fallback-2026-07-01`), refusal → null reading. Values are
+    range-checked server-side. Client timeout 20 s; offline/failure keeps the device read.
+29. **Every OCR value is confirmed**: `ui/ScanButton` = camera/gallery → OCR → dialog with the photo,
+    editable fields and alternative readings; nothing is used until "Use these values", and the form
+    still has to be saved. Cancel deletes the photo. Plate scan photo becomes the vehicle photo,
+    reg-card scan the reg-card photo, pump scan the receipt photo, odometer scans attach to the reading
+    (baseline or `source: 'ocr'`).
 21. After saving a new refuel the app opens the Fuel economy screen; if the interval just closed is
     flagged (drop/high) and has no annotation, the cause dialog opens once. "Not now" dismisses it for good.
 
@@ -128,3 +147,6 @@ Anomaly annotations live on refuel k (`anomaly_cause`, `anomaly_note`). Implemen
 - **M3 (done)**: service types incl. wash; defaults per owner; reminder rules (auto/custom/off) synced via
   `reminder_rules`; due engine + km/day; Maintenance screen, rule editor, home maintenance card, one-time
   "Any record?" prompts; local notifications for services and predicted refuels. Tests: 179 Jest + 13 server.
+- **M4 (done)**: scan number plate / registration card / odometer / pump display with editable confirm;
+  ML Kit on device; Claude vision fallback for pump displays (`ocr-pump` edge function). Tests: 202 Jest + 17 server.
+  Deploy: `supabase secrets set ANTHROPIC_API_KEY=...` and `supabase functions deploy ocr-pump`.

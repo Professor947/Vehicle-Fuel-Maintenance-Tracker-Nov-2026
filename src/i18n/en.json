@@ -243,5 +243,21 @@
     "dueDateBody": "{{service}} is due on {{date}}.",
     "refuelTitle": "Refuel soon — {{plate}}",
     "refuelBody": "Based on your usual pattern you'll likely need fuel around {{date}}."
+  },
+  "scan": {
+    "plate": "Scan number plate",
+    "regCard": "Scan registration card",
+    "odometer": "Scan odometer",
+    "pump": "Scan pump display",
+    "fromGallery": "Use a photo from gallery",
+    "reading": "Reading the photo…",
+    "confirmTitle": "Check the scanned values",
+    "confirmHint": "Compare with the photo and correct anything that's wrong before using these values.",
+    "nothingFound": "Couldn't read this photo clearly — please type the values.",
+    "alternatives": "Other readings:",
+    "useValues": "Use these values",
+    "source_device": "Read on this phone",
+    "source_cloud": "Read with Claude (online)",
+    "mismatch": "Litres × rate doesn't match the total — please check."
   }
 }

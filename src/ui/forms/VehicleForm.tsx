@@ -15,6 +15,8 @@ import { NumberField } from '@/ui/NumberField';
 import { PhotoField } from '@/ui/PhotoField';
 import { Screen } from '@/ui/Screen';
 import { TextField } from '@/ui/TextField';
+import { ScanButton } from '@/ui/ScanButton';
+import { odometerScanRunner, runPlateScan, runRegCardScan } from '@/ui/scanRunners';
 
 export function VehicleForm({ id }: { id?: string }) {
   const { t } = useTranslation();
@@ -32,6 +34,7 @@ export function VehicleForm({ id }: { id?: string }) {
   const [regCard, setRegCard] = useState<string | null>(existing?.regCardPhotoLocalUri ?? null);
   const [photoTouched, setPhotoTouched] = useState({ photo: false, regCard: false });
   const [errors, setErrors] = useState<FieldErrors<keyof VehicleInput>>({});
+  const [odometerPhoto, setOdometerPhoto] = useState<string | null>(null);
 
   const set = <K extends keyof VehicleInput>(k: K, v: VehicleInput[K]) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -43,7 +46,7 @@ export function VehicleForm({ id }: { id?: string }) {
       if (photoTouched.photo) repo.vehicles.setPhoto(existing.id, 'photo', photo);
       if (photoTouched.regCard) repo.vehicles.setPhoto(existing.id, 'regCard', regCard);
     } else {
-      const newId = repo.vehicles.create(r.value, { photo, regCard });
+      const newId = repo.vehicles.create(r.value, { photo, regCard, odometer: odometerPhoto });
       useApp.getState().selectVehicle(db, newId);
       requestSync();
       // Ask once per service type: "Any record of the last oil change?" (Yes → log it, No → skip).
@@ -65,6 +68,30 @@ export function VehicleForm({ id }: { id?: string }) {
 
   return (
     <Screen>
+      <ScanButton
+        label={t('scan.plate')}
+        icon="card-text-outline"
+        keepPhoto
+        run={runPlateScan}
+        onConfirm={(v, uri) => {
+          if (v.plate) set('plate', v.plate);
+          setPhoto(uri);
+          setPhotoTouched((p) => ({ ...p, photo: true }));
+        }}
+      />
+      <ScanButton
+        label={t('scan.regCard')}
+        icon="card-account-details-outline"
+        keepPhoto
+        run={runRegCardScan}
+        onConfirm={(v, uri) => {
+          if (v.plate) set('plate', v.plate);
+          if (v.type === 'bike' || v.type === 'car') set('type', v.type);
+          if (v.make) set('make', v.make);
+          setRegCard(uri);
+          setPhotoTouched((p) => ({ ...p, regCard: true }));
+        }}
+      />
       <TextField
         label={t('vehicle.plate')}
         hint={t('vehicle.plateHint')}
@@ -84,6 +111,18 @@ export function VehicleForm({ id }: { id?: string }) {
       </HelperText>
       <TextField label={`${t('vehicle.make')} (${t('common.optional')})`} value={form.make} onChangeText={(v) => set('make', v)} />
       <TextField label={`${t('vehicle.model')} (${t('common.optional')})`} value={form.model} onChangeText={(v) => set('model', v)} />
+      {!existing ? (
+        <ScanButton
+          label={t('scan.odometer')}
+          icon="speedometer"
+          keepPhoto
+          run={odometerScanRunner(null)}
+          onConfirm={(v, uri) => {
+            if (v.odometer) set('odometerStart', v.odometer);
+            setOdometerPhoto(uri);
+          }}
+        />
+      ) : null}
       <NumberField
         label={t('vehicle.odometerStart')}
         value={form.odometerStart}

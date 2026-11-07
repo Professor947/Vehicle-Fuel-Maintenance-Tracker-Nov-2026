@@ -14,6 +14,8 @@ import { confirmDestructive } from '@/ui/confirm';
 import { DateTimeField } from '@/ui/DateTimeField';
 import { NumberField } from '@/ui/NumberField';
 import { Screen } from '@/ui/Screen';
+import { ScanButton } from '@/ui/ScanButton';
+import { odometerScanRunner } from '@/ui/scanRunners';
 
 export function OdometerForm({ vehicleId, id }: { vehicleId: string; id?: string }) {
   const { t } = useTranslation();
@@ -23,6 +25,7 @@ export function OdometerForm({ vehicleId, id }: { vehicleId: string; id?: string
   const [value, setValue] = useState(existing ? String(existing.odometer) : '');
   const [timestamp, setTimestamp] = useState(() => existing?.timestamp ?? Date.now());
   const [error, setError] = useState<string>();
+  const [photo, setPhoto] = useState<string | null>(null);
 
   const latest = existing ? null : (repo.odometer.latest(vehicleId)?.odometer ?? null);
   const parsed = parseDecimal(value);
@@ -32,7 +35,7 @@ export function OdometerForm({ vehicleId, id }: { vehicleId: string; id?: string
     const r = validateOdometer(value);
     if (!r.ok) return setError(r.errors.odometer);
     if (existing) repo.odometer.update(existing.id, { odometer: r.value, timestamp });
-    else repo.odometer.add(vehicleId, r.value, timestamp, 'manual');
+    else repo.odometer.add(vehicleId, r.value, timestamp, photo ? 'ocr' : 'manual', photo);
     requestSync();
     router.back();
   };
@@ -40,6 +43,18 @@ export function OdometerForm({ vehicleId, id }: { vehicleId: string; id?: string
   return (
     <Screen>
       <DateTimeField value={timestamp} onChange={setTimestamp} />
+      {!existing ? (
+        <ScanButton
+          label={t('scan.odometer')}
+          icon="speedometer"
+          keepPhoto
+          run={odometerScanRunner(latest)}
+          onConfirm={(v, uri) => {
+            if (v.odometer) setValue(v.odometer);
+            setPhoto(uri);
+          }}
+        />
+      ) : null}
       <NumberField label={t('odometer.reading')} value={value} onChangeText={setValue} error={error} />
       {backwards && latest != null ? (
         <HelperText type="info">{t('warnings.odometerBackwards', { latest: formatKm(latest, lang) })}</HelperText>

@@ -18,6 +18,8 @@ import { NumberField } from '@/ui/NumberField';
 import { PhotoField } from '@/ui/PhotoField';
 import { Screen } from '@/ui/Screen';
 import { TextField } from '@/ui/TextField';
+import { ScanButton } from '@/ui/ScanButton';
+import { odometerScanRunner, runPumpScan } from '@/ui/scanRunners';
 
 const str = (n: number | null | undefined) => (n == null ? '' : String(Math.round(n * 100) / 100));
 
@@ -109,6 +111,12 @@ export function RefuelForm({ vehicleId, id }: { vehicleId: string; id?: string }
           {t(locStatus === 'locating' ? 'refuel.locating' : locStatus === 'done' ? 'refuel.located' : 'refuel.noLocation')}
         </Chip>
       ) : null}
+      <ScanButton
+        label={t('scan.odometer')}
+        icon="speedometer"
+        run={odometerScanRunner(latest)}
+        onConfirm={(v) => v.odometer && set('odometer', v.odometer)}
+      />
       <NumberField
         label={t('refuel.odometer')}
         hint={existing ? undefined : t('refuel.odometerPrompt')}
@@ -120,6 +128,22 @@ export function RefuelForm({ vehicleId, id }: { vehicleId: string; id?: string }
       {backwards && latest != null ? (
         <HelperText type="info">{t('warnings.odometerBackwards', { latest: formatKm(latest, lang) })}</HelperText>
       ) : null}
+      <ScanButton
+        label={t('scan.pump')}
+        icon="gas-station"
+        keepPhoto
+        run={runPumpScan}
+        onConfirm={(v, uri) => {
+          setForm((f) => ({
+            ...f,
+            litres: v.litres || f.litres,
+            ratePerLitre: v.ratePerLitre || f.ratePerLitre,
+            totalCost: v.total || f.totalCost,
+          }));
+          setReceipt(uri);
+          setReceiptTouched(true);
+        }}
+      />
       <HelperText type="info">{t('refuel.autoCalcHint')}</HelperText>
       <NumberField label={t('refuel.litres')} value={form.litres} onChangeText={(v) => set('litres', v)} error={errors.litres} />
       <NumberField label={t('refuel.rate')} value={form.ratePerLitre} onChangeText={(v) => set('ratePerLitre', v)} error={errors.ratePerLitre} />

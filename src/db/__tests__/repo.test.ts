@@ -200,3 +200,15 @@ describe('repo → mileage engine (integration)', () => {
     expect(m.intervals.at(-1)!.flag).toBeNull();
   });
 });
+
+describe('odometer photos (M4)', () => {
+  it('baseline photo from vehicle creation and scanned readings are queued for upload', () => {
+    const { db, repo } = setup();
+    const id = repo.vehicles.create(bike, { odometer: 'file:///odo0.jpg' });
+    const r = repo.odometer.add(id, 10_100, 2000, 'ocr', 'file:///odo1.jpg');
+    const readings = repo.odometer.list(id);
+    expect(readings.find((x) => x.source === 'baseline')!.photoLocalUri).toBe('file:///odo0.jpg');
+    expect(readings.find((x) => x.id === r)).toMatchObject({ source: 'ocr', photoLocalUri: 'file:///odo1.jpg' });
+    expect(db.select().from(photoUploads).all().map((p) => p.localUri).sort()).toEqual(['file:///odo0.jpg', 'file:///odo1.jpg']);
+  });
+});

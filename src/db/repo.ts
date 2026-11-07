@@ -121,17 +121,18 @@ export function createRepo({ db, userId, newId, now = Date.now }: RepoDeps) {
     },
     create(
       v: VehicleValue,
-      photos: { photo?: string | null; regCard?: string | null } = {},
+      photos: { photo?: string | null; regCard?: string | null; odometer?: string | null } = {},
       baselineAt: number = now(),
     ): string {
       return db.transaction((tx) => {
         const id = insertRow(tx, 'vehicles', { ...v, plateNormalized: normalizePlate(v.plate) });
-        insertRow(tx, 'odometer_readings', {
+        const baselineId = insertRow(tx, 'odometer_readings', {
           vehicleId: id,
           timestamp: baselineAt,
           odometer: v.odometerStart,
           source: 'baseline',
         });
+        if (photos.odometer) attachPhoto(tx, 'odometer_readings', baselineId, 'photo_path', photos.odometer);
         if (photos.photo) attachPhoto(tx, 'vehicles', id, 'photo_path', photos.photo);
         if (photos.regCard) attachPhoto(tx, 'vehicles', id, 'reg_card_photo_path', photos.regCard);
         return id;
@@ -191,8 +192,18 @@ export function createRepo({ db, userId, newId, now = Date.now }: RepoDeps) {
 
   // ---- odometer ------------------------------------------------------------
   const odometerRepo = {
-    add(vehicleId: string, odometer: number, timestamp: number = now(), source: OdometerSource = 'manual'): string {
-      return db.transaction((tx) => insertRow(tx, 'odometer_readings', { vehicleId, odometer, timestamp, source }));
+    add(
+      vehicleId: string,
+      odometer: number,
+      timestamp: number = now(),
+      source: OdometerSource = 'manual',
+      photo: string | null = null,
+    ): string {
+      return db.transaction((tx) => {
+        const id = insertRow(tx, 'odometer_readings', { vehicleId, odometer, timestamp, source });
+        if (photo) attachPhoto(tx, 'odometer_readings', id, 'photo_path', photo);
+        return id;
+      });
     },
     update(id: string, patch: { odometer?: number; timestamp?: number }) {
       db.transaction((tx) => updateRow(tx, 'odometer_readings', id, patch));
