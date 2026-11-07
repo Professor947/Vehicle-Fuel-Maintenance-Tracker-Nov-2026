@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 
 import { normalizePlate } from '@/domain/plate';
-import type { OdometerSource } from '@/domain/types';
+import type { OdometerSource, ServiceType } from '@/domain/types';
 import type { RefuelValue, ServiceValue, VehicleValue } from '@/domain/validation';
 
 import {
@@ -9,9 +9,11 @@ import {
   outbox,
   photoUploads,
   refuels,
+  reminderRules,
   serviceEvents,
   vehicles,
   type OdometerReading,
+  type ReminderRule,
   type Refuel,
   type ServiceEvent,
   type Vehicle,
@@ -320,6 +322,38 @@ export function createRepo({ db, userId, newId, now = Date.now }: RepoDeps) {
     },
   };
 
+  // ---- reminder rules ------------------------------------------------------------
+  const ruleRepo = {
+    list(vehicleId: string): ReminderRule[] {
+      return db
+        .select()
+        .from(reminderRules)
+        .where(and(eq(reminderRules.vehicleId, vehicleId), live(reminderRules)))
+        .orderBy(desc(reminderRules.updatedAt))
+        .all();
+    },
+    /** Latest live rule per service type (two devices could create duplicates; newest wins). */
+    byType(vehicleId: string): Map<string, ReminderRule> {
+      const m = new Map<string, ReminderRule>();
+      for (const r of ruleRepo.list(vehicleId)) if (!m.has(r.serviceType)) m.set(r.serviceType, r);
+      return m;
+    },
+    upsert(
+      vehicleId: string,
+      serviceType: ServiceType,
+      v: { mode: 'auto' | 'custom'; intervalKm: number | null; intervalDays: number | null; enabled: boolean },
+    ): string {
+      return db.transaction((tx) => {
+        const existing = ruleRepo.byType(vehicleId).get(serviceType);
+        if (existing) {
+          updateRow(tx, 'reminder_rules', existing.id, v);
+          return existing.id;
+        }
+        return insertRow(tx, 'reminder_rules', { vehicleId, serviceType, ...v });
+      });
+    },
+  };
+
   // ---- sync bookkeeping --------------------------------------------------------
   const syncInfo = {
     pendingCount(): number {
@@ -344,6 +378,7 @@ export function createRepo({ db, userId, newId, now = Date.now }: RepoDeps) {
     odometer: odometerRepo,
     refuels: refuelRepo,
     services: serviceRepo,
+    rules: ruleRepo,
     sync: syncInfo,
     /** Used by the photo uploader once a file is in storage. */
     setPhotoPath(tableName: SyncTableName, rowId: string, pathColumn: string, storagePath: string) {

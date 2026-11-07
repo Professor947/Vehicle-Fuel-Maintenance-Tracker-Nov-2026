@@ -50,6 +50,12 @@
           "locationWhenInUsePermission": "FuelTrack records where you refuel to suggest the nearest fuel station. Location is only read on the refuel screen.",
           "isAndroidBackgroundLocationEnabled": false
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#1565C0"
+        }
       ]
     ]
   }

@@ -5,10 +5,13 @@ import { Image, ScrollView, View } from 'react-native';
 import { Button, Card, Menu, Text, useTheme } from 'react-native-paper';
 
 import { db } from '@/db/client';
+import { kvGet } from '@/db/kv';
 import { formatDate, formatKm, formatKmPerLitre, formatLitres, formatPKR, formatSignedPercent } from '@/i18n/format';
 import { useApp } from '@/state/app';
 import { useLive } from '@/state/RepoContext';
 import { useMileage } from '@/state/useMileage';
+import { useReminders } from '@/state/useReminders';
+import { ServiceStatusRow } from '@/ui/ServiceStatusRow';
 import { FLAG_COLORS } from '@/ui/MileageChart';
 
 export default function Home() {
@@ -29,6 +32,17 @@ export default function Home() {
   );
 
   const mileage = useMileage(vehicle?.id);
+  const reminders = useReminders(vehicle?.id);
+  // Due/overdue items, plus unanswered "Any record?" questions (answered "No" → hidden unless due).
+  const homeItems = useLive(
+    () =>
+      (reminders?.services ?? []).filter(
+        (s) =>
+          (s.due && s.due.status !== 'ok') ||
+          (s.eventCount === 0 && vehicle && kvGet(db, `svc_prompt_dismissed:${vehicle.id}:${s.serviceType}`) !== '1'),
+      ),
+    [reminders, vehicle?.id],
+  );
   const latest = mileage?.intervals.at(-1);
 
   if (!vehicle) {
@@ -42,7 +56,7 @@ export default function Home() {
     );
   }
 
-  const go = (pathname: '/refuel/new' | '/service/new' | '/odometer/new' | '/history' | '/economy') =>
+  const go = (pathname: '/refuel/new' | '/service/new' | '/odometer/new' | '/history' | '/economy' | '/maintenance') =>
     router.push({ pathname, params: { vehicleId: vehicle.id } });
 
   return (
@@ -114,6 +128,17 @@ export default function Home() {
               {t('home.nextRefuel')}: {formatDate(mileage.predictedNextRefuelAt, lang)}
             </Text>
           ) : null}
+        </Card.Content>
+      </Card>
+
+      <Card onPress={() => go('/maintenance')}>
+        <Card.Title title={t('home.maintenance')} right={(p) => <Text {...p} style={{ marginEnd: 16 }}>›</Text>} />
+        <Card.Content style={{ gap: 8 }}>
+          {homeItems.length ? (
+            homeItems.slice(0, 4).map((s) => <ServiceStatusRow key={s.serviceType} vehicleId={vehicle.id} s={s} compact />)
+          ) : (
+            <Text>{t('home.allGood')}</Text>
+          )}
         </Card.Content>
       </Card>
 

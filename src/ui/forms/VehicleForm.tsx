@@ -45,6 +45,10 @@ export function VehicleForm({ id }: { id?: string }) {
     } else {
       const newId = repo.vehicles.create(r.value, { photo, regCard });
       useApp.getState().selectVehicle(db, newId);
+      requestSync();
+      // Ask once per service type: "Any record of the last oil change?" (Yes → log it, No → skip).
+      router.replace({ pathname: '/maintenance', params: { vehicleId: newId } });
+      return;
     }
     requestSync();
     router.back();

@@ -56,7 +56,9 @@
     "latestMileage": "تازہ ترین ایوریج",
     "mileagePending": "ایوریج زیرِ التوا",
     "mileagePendingHint": "اگلے ریفیول پر حساب ہو گا",
-    "nextRefuel": "اگلا ریفیول متوقع"
+    "nextRefuel": "اگلا ریفیول متوقع",
+    "maintenance": "دیکھ بھال",
+    "allGood": "جلد کچھ واجب نہیں"
   },
   "vehicle": {
     "title": "گاڑی",
@@ -111,7 +113,8 @@
     "type_general_service": "جنرل سروس",
     "odometer": "اوڈومیٹر (کلومیٹر)",
     "cost": "خرچ (روپے)",
-    "deleteConfirm": "یہ سروس ریکارڈ حذف کریں؟"
+    "deleteConfirm": "یہ سروس ریکارڈ حذف کریں؟",
+    "type_wash": "دھلائی"
   },
   "history": {
     "title": "ریکارڈ",
@@ -195,5 +198,50 @@
     "skip": "ابھی نہیں",
     "save": "نوٹ محفوظ کریں",
     "fixEntry": "اندراج درست کریں"
+  },
+  "maintenance": {
+    "title": "دیکھ بھال",
+    "anyRecord": "آخری {{service}} کا کوئی ریکارڈ ہے؟",
+    "noRecordAnchor": "ریکارڈ نہیں — گاڑی شامل کرنے کے وقت سے شمار",
+    "last": "آخری: {{date}} کو {{km}} پر",
+    "never": "ابھی کوئی ریکارڈ نہیں",
+    "status_overdue": "تاخیر",
+    "status_due_soon": "جلد واجب",
+    "status_ok": "ٹھیک",
+    "off": "یاد دہانی بند",
+    "dueIn": "واجب {{date}}",
+    "dueAtKm": "یا {{km}} پر",
+    "kmLeft": "{{km}} باقی",
+    "kmOver": "{{km}} زیادہ",
+    "every": "ہر {{what}}",
+    "everyKmDays": "{{km}} یا {{days}} دن، جو پہلے ہو",
+    "everyDays": "{{days}} دن",
+    "everyKm": "{{km}}",
+    "source_default": "طے شدہ",
+    "source_observed": "آپ کے ریکارڈ کی بنیاد پر",
+    "source_custom": "اپنی مرضی",
+    "noKmRate": "کلومیٹر کی بنیاد پر تاریخ کے اندازے کے لیے ریفیول یا اوڈومیٹر ریڈنگ درج کریں۔",
+    "log": "{{service}} درج کریں"
+  },
+  "rule": {
+    "title": "یاد دہانی کی ترتیبات",
+    "enabled": "یاد دلائیں",
+    "mode": "وقفہ",
+    "mode_auto": "خودکار",
+    "mode_custom": "اپنی مرضی",
+    "autoHint": "2 ریکارڈ درج ہونے تک طے شدہ وقفہ، پھر آپ کا اپنا معمول۔",
+    "km": "ہر (کلومیٹر)",
+    "days": "ہر (دن)",
+    "kmOrDaysRequired": "کلومیٹر، دن یا دونوں درج کریں",
+    "defaultsAre": "طے شدہ: {{what}}"
+  },
+  "reminders": {
+    "channel": "دیکھ بھال کی یاد دہانیاں",
+    "serviceTitle": "{{service}} — {{plate}}",
+    "overdueBody": "{{service}} میں تاخیر ہو چکی ہے۔ مکمل ہونے پر درج کریں۔",
+    "dueKmBody": "{{service}} {{km}} پر واجب ہے۔",
+    "dueDateBody": "{{service}} {{date}} کو واجب ہے۔",
+    "refuelTitle": "جلد ریفیول — {{plate}}",
+    "refuelBody": "آپ کے معمول کے مطابق {{date}} کے آس پاس فیول کی ضرورت ہو گی۔"
   }
 }

@@ -121,3 +121,15 @@ test('storage: users can only write under their own folder', async () => {
   );
   assert.equal((await as(db, B, 'select * from storage.objects')).rows.length, 0);
 });
+
+test('wash is an accepted service type and reminder type; unknown types are rejected', async () => {
+  const db = await setup();
+  await as(db, A, vehicleSql, [V1, A]);
+  const svc = `insert into public.service_events (id, user_id, vehicle_id, type, "timestamp", odometer)
+    values (gen_random_uuid(), $1, $2, $3, now(), 10100)`;
+  await as(db, A, svc, [A, V1, 'wash']);
+  await assert.rejects(as(db, A, svc, [A, V1, 'detailing']), /check constraint/);
+  const rule = `insert into public.reminder_rules (id, user_id, vehicle_id, service_type, interval_days, mode)
+    values (gen_random_uuid(), $1, $2, 'wash', 14, 'custom')`;
+  await as(db, A, rule, [A, V1]);
+});

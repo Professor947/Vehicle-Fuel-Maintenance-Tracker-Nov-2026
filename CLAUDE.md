@@ -86,6 +86,25 @@ Env: copy `.env.example` → `.env.local` with `EXPO_PUBLIC_SUPABASE_URL` / `EXP
 20. **Station name**: Supabase Edge Function `places-nearby` → Google Places API (New) searchNearby
     (`gas_station`, 500 m, by distance). Key is the function secret `GOOGLE_PLACES_API_KEY`. Client times out
     after 5 s and falls back to the nearest station the user has used before (≤300 m). Always editable.
+22. **Service intervals (owner-approved 2026-11-07)**, in `src/domain/defaults.ts`, whichever comes first:
+    bike oil 1500 km/60 d, chain oil 500 km/14 d, filter 3000 km/180 d, general service 30 d, wash 14 d;
+    car oil 3500 km/90 d, filter 5000 km/180 d, general service 60 d, wash 14 d. Chain oil bike-only.
+    **wash** added as a service type (owner request) → `supabase/migrations/20261108000000_wash_service.sql`.
+    General service and wash are time-only (km = null), also when switched to observed intervals.
+23. **Reminder engine** (`src/domain/reminders.ts`): rule `custom` → user values; else ≥2 logged events →
+    median of the user's own km gaps and day gaps; else defaults. Anchor = last event, or the vehicle's
+    baseline reading if none logged. due km = anchor + km; due date = anchor + days; km converted to a date
+    with km/day (last 60 days if they span ≥7 days, else all history; from readings, refuels, services).
+    Status: overdue / due soon (≤100 km or ≤1 day) / ok.
+24. **Notifications are local scheduled notifications** (expo-notifications, DATE triggers): notify at the
+    earlier of 1 day before the days-due date or the projected date of (due km − 100). Refuel prediction
+    notifies 1 day before. `domain/notifyPlan.ts` keeps a delivered-state map in kv so a reminder is never
+    repeated; a past-due reminder never delivered fires once immediately. Rescheduled on start,
+    foreground and (debounced 3 s) after DB changes (`src/reminders/scheduler.ts`). No push server.
+25. **"Any record?" prompts**: after adding a vehicle the app opens Maintenance; each type without a logged
+    event shows "Any record of the last …? Yes / No". No → stored in local kv
+    (`svc_prompt_dismissed:<vehicle>:<type>`), never asked again on this device (not synced; a second
+    device may ask once). Reminders still run (anchored on the baseline) unless turned off in the rule.
 21. After saving a new refuel the app opens the Fuel economy screen; if the interval just closed is
     flagged (drop/high) and has no annotation, the cause dialog opens once. "Not now" dismisses it for good.
 
@@ -106,3 +125,6 @@ Anomaly annotations live on refuel k (`anomaly_cause`, `anomaly_note`). Implemen
   home economy card. Tests: 137 Jest + 12 server.
   Deploy: `supabase functions deploy places-nearby` and `supabase secrets set GOOGLE_PLACES_API_KEY=...`
   (enable "Places API (New)" in Google Cloud).
+- **M3 (done)**: service types incl. wash; defaults per owner; reminder rules (auto/custom/off) synced via
+  `reminder_rules`; due engine + km/day; Maintenance screen, rule editor, home maintenance card, one-time
+  "Any record?" prompts; local notifications for services and predicted refuels. Tests: 179 Jest + 13 server.

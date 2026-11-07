@@ -12,11 +12,15 @@ import { useApp } from '@/state/app';
 import { RepoProvider } from '@/state/RepoContext';
 import { useSession } from '@/state/session';
 import { startSyncScheduler } from '@/sync/scheduler';
+import { startReminderScheduler } from '@/reminders/scheduler';
 import { randomUUID } from 'expo-crypto';
 
 export default function AppLayout() {
   const { t } = useTranslation();
   const user = useSession((s) => s.user)!;
+
+  // Local reminder notifications work without a server, so they run even when sync is not configured.
+  useEffect(() => startReminderScheduler(createRepo({ db, userId: user.id, newId: randomUUID })), [user.id]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -48,6 +52,8 @@ export default function AppLayout() {
         <Stack.Screen name="odometer/[id]" options={{ title: t('odometer.title') }} />
         <Stack.Screen name="history" options={{ title: t('history.title') }} />
         <Stack.Screen name="economy" options={{ title: t('economy.title') }} />
+        <Stack.Screen name="maintenance/index" options={{ title: t('maintenance.title') }} />
+        <Stack.Screen name="maintenance/[type]" options={{ title: t('rule.title') }} />
         <Stack.Screen name="settings" options={{ title: t('settings.title') }} />
       </Stack>
     </RepoProvider>

@@ -56,7 +56,9 @@
     "latestMileage": "Latest mileage",
     "mileagePending": "Mileage pending",
     "mileagePendingHint": "Calculated at your next refuel",
-    "nextRefuel": "Next refuel expected"
+    "nextRefuel": "Next refuel expected",
+    "maintenance": "Maintenance",
+    "allGood": "Nothing due soon"
   },
   "vehicle": {
     "title": "Vehicle",
@@ -111,7 +113,8 @@
     "type_general_service": "General service",
     "odometer": "Odometer (km)",
     "cost": "Cost (Rs)",
-    "deleteConfirm": "Delete this service record?"
+    "deleteConfirm": "Delete this service record?",
+    "type_wash": "Wash"
   },
   "history": {
     "title": "History",
@@ -195,5 +198,50 @@
     "skip": "Not now",
     "save": "Save note",
     "fixEntry": "Fix the entry"
+  },
+  "maintenance": {
+    "title": "Maintenance",
+    "anyRecord": "Any record of the last {{service}}?",
+    "noRecordAnchor": "No record — counted from when you added the vehicle",
+    "last": "Last: {{date}} at {{km}}",
+    "never": "No record yet",
+    "status_overdue": "Overdue",
+    "status_due_soon": "Due soon",
+    "status_ok": "OK",
+    "off": "Reminders off",
+    "dueIn": "Due {{date}}",
+    "dueAtKm": "or at {{km}}",
+    "kmLeft": "{{km}} left",
+    "kmOver": "{{km}} over",
+    "every": "Every {{what}}",
+    "everyKmDays": "{{km}} or {{days}} days, whichever first",
+    "everyDays": "{{days}} days",
+    "everyKm": "{{km}}",
+    "source_default": "Default",
+    "source_observed": "Based on your history",
+    "source_custom": "Custom",
+    "noKmRate": "Log refuels or odometer readings to predict km-based dates.",
+    "log": "Log {{service}}"
+  },
+  "rule": {
+    "title": "Reminder settings",
+    "enabled": "Remind me",
+    "mode": "Interval",
+    "mode_auto": "Automatic",
+    "mode_custom": "Custom",
+    "autoHint": "Uses the defaults until you log 2 records, then your own pattern.",
+    "km": "Every (km)",
+    "days": "Every (days)",
+    "kmOrDaysRequired": "Enter km, days, or both",
+    "defaultsAre": "Default: {{what}}"
+  },
+  "reminders": {
+    "channel": "Maintenance reminders",
+    "serviceTitle": "{{service}} — {{plate}}",
+    "overdueBody": "{{service}} is overdue. Log it once done.",
+    "dueKmBody": "{{service}} is due at {{km}}.",
+    "dueDateBody": "{{service}} is due on {{date}}.",
+    "refuelTitle": "Refuel soon — {{plate}}",
+    "refuelBody": "Based on your usual pattern you'll likely need fuel around {{date}}."
   }
 }
