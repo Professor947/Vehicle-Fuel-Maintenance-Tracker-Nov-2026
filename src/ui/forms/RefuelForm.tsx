@@ -5,8 +5,9 @@ import { View } from 'react-native';
 import { Button, Chip, HelperText } from 'react-native-paper';
 
 import { parseDecimal } from '@/domain/numbers';
-import { odometerGoesBackwards, validateRefuel, type FieldErrors, type RefuelInput } from '@/domain/validation';
-import { formatKm } from '@/i18n/format';
+import { applySoftRate, odometerGoesBackwards, validateRefuel, type FieldErrors, type RefuelInput } from '@/domain/validation';
+import { lastPaidRate } from '@/domain/fuelPrice';
+import { formatDate, formatKm } from '@/i18n/format';
 import { getRefuelLocation, type Fix } from '@/services/location';
 import { guessStation } from '@/services/places';
 import { useApp } from '@/state/app';
@@ -33,10 +34,18 @@ export function RefuelForm({ vehicleId, id }: { vehicleId: string; id?: string }
   const repo = useRepo();
   const existing = id ? repo.refuels.get(id) : undefined;
 
+  // The rate comes from the pump display (scan or typing). Until then, new refuels start with the last
+  // rate the user paid, as a soft value that litres + total override.
+  const [defaultRate] = useState(() => {
+    if (existing) return null;
+    const types = new Map(repo.vehicles.list().map((v) => [v.id, v.type]));
+    return lastPaidRate(repo.refuels.rates(), vehicleId, (id) => types.get(id));
+  });
+  const [rateIsDefault, setRateIsDefault] = useState(defaultRate != null);
   const [form, setForm] = useState<RefuelInput>({
     odometer: str(existing?.odometer),
     litres: str(existing?.litres),
-    ratePerLitre: str(existing?.ratePerLitre),
+    ratePerLitre: existing ? str(existing.ratePerLitre) : str(defaultRate?.ratePerLitre),
     totalCost: str(existing?.totalCost),
     stationName: existing?.stationName ?? '',
   });
@@ -44,7 +53,10 @@ export function RefuelForm({ vehicleId, id }: { vehicleId: string; id?: string }
   const [receipt, setReceipt] = useState<string | null>(existing?.receiptPhotoLocalUri ?? null);
   const [receiptTouched, setReceiptTouched] = useState(false);
   const [errors, setErrors] = useState<FieldErrors<keyof RefuelInput>>({});
-  const set = <K extends keyof RefuelInput>(k: K, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const set = <K extends keyof RefuelInput>(k: K, v: string) => {
+    if (k === 'ratePerLitre') setRateIsDefault(false);
+    setForm((f) => ({ ...f, [k]: v }));
+  };
 
   const [fix, setFix] = useState<Fix | null>(null);
   const [locStatus, setLocStatus] = useState<'idle' | 'locating' | 'done' | 'none'>(existing ? 'idle' : 'locating');
@@ -72,13 +84,13 @@ export function RefuelForm({ vehicleId, id }: { vehicleId: string; id?: string }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const live = useMemo(() => validateRefuel(form), [form]);
+  const live = useMemo(() => validateRefuel(applySoftRate(form, rateIsDefault)), [form, rateIsDefault]);
   const latest = existing ? null : (repo.odometer.latest(vehicleId)?.odometer ?? null);
   const odo = parseDecimal(form.odometer);
   const backwards = odo != null && odometerGoesBackwards(odo, latest);
 
   const save = () => {
-    const r = validateRefuel(form);
+    const r = validateRefuel(applySoftRate(form, rateIsDefault));
     if (!r.ok) return setErrors(r.errors);
     if (existing) {
       repo.refuels.update(existing.id, { ...r.value, timestamp });
@@ -134,6 +146,7 @@ export function RefuelForm({ vehicleId, id }: { vehicleId: string; id?: string }
         keepPhoto
         run={runPumpScan}
         onConfirm={(v, uri) => {
+          if (v.ratePerLitre) setRateIsDefault(false);
           setForm((f) => ({
             ...f,
             litres: v.litres || f.litres,
@@ -146,7 +159,17 @@ export function RefuelForm({ vehicleId, id }: { vehicleId: string; id?: string }
       />
       <HelperText type="info">{t('refuel.autoCalcHint')}</HelperText>
       <NumberField label={t('refuel.litres')} value={form.litres} onChangeText={(v) => set('litres', v)} error={errors.litres} />
-      <NumberField label={t('refuel.rate')} value={form.ratePerLitre} onChangeText={(v) => set('ratePerLitre', v)} error={errors.ratePerLitre} />
+      <NumberField
+        label={t('refuel.rate')}
+        value={form.ratePerLitre}
+        onChangeText={(v) => set('ratePerLitre', v)}
+        error={errors.ratePerLitre}
+        hint={
+          rateIsDefault && defaultRate
+            ? t('fuelPrice.prefilledLast', { date: formatDate(defaultRate.timestamp, lang) })
+            : undefined
+        }
+      />
       <NumberField label={t('refuel.total')} value={form.totalCost} onChangeText={(v) => set('totalCost', v)} error={errors.totalCost} />
       {live.ok && live.value.mismatch ? <HelperText type="error">{t('refuel.mismatchWarning')}</HelperText> : null}
       <TextField

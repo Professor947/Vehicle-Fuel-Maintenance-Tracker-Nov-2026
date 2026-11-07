@@ -279,6 +279,14 @@ export function createRepo({ db, userId, newId, now = Date.now }: RepoDeps) {
     setAnomaly(id: string, cause: string | null, note: string | null) {
       db.transaction((tx) => updateRow(tx, 'refuels', id, { anomalyCause: cause, anomalyNote: note }));
     },
+    /** Rates paid on every live refuel (all vehicles) — for the "last rate you paid" pre-fill. */
+    rates(): { vehicleId: string; timestamp: number; ratePerLitre: number }[] {
+      return db
+        .select({ vehicleId: refuels.vehicleId, timestamp: refuels.timestamp, ratePerLitre: refuels.ratePerLitre })
+        .from(refuels)
+        .where(live(refuels))
+        .all();
+    },
     /** Past refuels with a station name and GPS (offline fallback for station lookup). */
     knownStations(): { stationName: string | null; lat: number | null; lng: number | null }[] {
       return db

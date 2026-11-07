@@ -38,7 +38,9 @@ export default function AppLayout() {
           name="index"
           options={{
             title: t('app.name'),
-            headerRight: () => <IconButton icon="cog" onPress={() => router.push('/settings')} />,
+            headerRight: () => (
+              <IconButton icon="cog" accessibilityLabel={t('settings.settingsA11y')} onPress={() => router.push('/settings')} />
+            ),
           }}
         />
         <Stack.Screen name="vehicles/index" options={{ title: t('vehicle.list') }} />

@@ -140,7 +140,9 @@
     "syncNow": "ابھی سنک کریں",
     "syncError": "آخری سنک ناکام: {{message}}",
     "account": "اکاؤنٹ",
-    "signedInAs": "{{phone}} کے طور پر سائن ان"
+    "signedInAs": "{{phone}} کے طور پر سائن ان",
+    "version": "ورژن {{version}}",
+    "settingsA11y": "ترتیبات"
   },
   "errors": {
     "required": "ضروری ہے",
@@ -259,5 +261,8 @@
     "source_device": "اس فون پر پڑھا گیا",
     "source_cloud": "Claude سے پڑھا گیا (آن لائن)",
     "mismatch": "لیٹر × قیمت کل رقم سے میل نہیں کھاتا — براہِ کرم چیک کریں۔"
+  },
+  "fuelPrice": {
+    "prefilledLast": "آپ کی آخری ادا کردہ قیمت ({{date}}) — پمپ اسکین کریں یا ڈسپلے پر مختلف ہو تو تبدیل کریں۔"
   }
 }

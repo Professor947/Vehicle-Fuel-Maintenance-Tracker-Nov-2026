@@ -162,3 +162,15 @@ export function validateService(
     value: { type: input.type!, odometer: odo.value!, cost, notes: input.notes.trim() || null },
   };
 }
+
+/**
+ * The refuel rate may be pre-filled from the default fuel price. That value is only a suggestion:
+ * if the user (or a scan) supplies litres AND total, the rate is derived from them instead, so a
+ * stale default never causes a false mismatch.
+ */
+export function applySoftRate(input: RefuelInput, rateIsDefault: boolean): RefuelInput {
+  if (rateIsDefault && parseDecimal(input.litres) != null && parseDecimal(input.totalCost) != null) {
+    return { ...input, ratePerLitre: '' };
+  }
+  return input;
+}

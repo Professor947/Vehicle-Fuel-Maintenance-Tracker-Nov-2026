@@ -16,6 +16,7 @@ import { useLive, useRepo } from '@/state/RepoContext';
 import { onSignedOut, useSession } from '@/state/session';
 import { runSync } from '@/sync/engine';
 import { Screen } from '@/ui/Screen';
+import Constants from 'expo-constants';
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -81,6 +82,9 @@ export default function Settings() {
       <Button mode="outlined" textColor="#B3261E" icon="logout" style={{ margin: 16 }} onPress={signOut}>
         {t('auth.signOut')}
       </Button>
+      <Text variant="bodySmall" style={{ textAlign: 'center', opacity: 0.6 }}>
+        {t('settings.version', { version: Constants.expoConfig?.version ?? '?' })}
+      </Text>
     </Screen>
   );
 }

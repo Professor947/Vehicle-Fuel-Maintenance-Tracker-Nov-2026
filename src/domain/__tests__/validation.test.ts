@@ -1,5 +1,6 @@
 import { serviceTypesFor } from '../types';
 import {
+  applySoftRate,
   odometerGoesBackwards,
   validateOdometer,
   validateRefuel,
@@ -106,5 +107,24 @@ describe('validateService', () => {
   it('rejects invalid cost text', () => {
     const r = validateService({ ...base, cost: 'abc' }, 'bike');
     expect(!r.ok && r.errors.cost).toBe('invalid_number');
+  });
+});
+
+describe('applySoftRate (default fuel price pre-fill)', () => {
+  const base = { odometer: '15000', litres: '', ratePerLitre: '272.89', totalCost: '', stationName: '' };
+
+  it('keeps the default rate when only litres are entered → total computed from it', () => {
+    const r = validateRefuel(applySoftRate({ ...base, litres: '4' }, true));
+    expect(r.ok && r.value.totalCost).toBeCloseTo(1091.56, 6);
+  });
+
+  it('drops the default when litres and total are entered → rate derived, no false mismatch', () => {
+    const r = validateRefuel(applySoftRate({ ...base, litres: '4', totalCost: '1100' }, true));
+    expect(r.ok && r.value).toMatchObject({ ratePerLitre: 275, mismatch: false });
+  });
+
+  it('a rate the user typed is never dropped', () => {
+    const r = validateRefuel(applySoftRate({ ...base, litres: '4', totalCost: '1200' }, false));
+    expect(r.ok && r.value).toMatchObject({ ratePerLitre: 272.89, mismatch: true });
   });
 });

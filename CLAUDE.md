@@ -32,7 +32,8 @@ Env: copy `.env.example` → `.env.local` with `EXPO_PUBLIC_SUPABASE_URL` / `EXP
 - `src/services/` Supabase client, auth, photo capture/compression, Supabase `RemoteApi` adapter.
 - `src/state/` zustand stores (session, app) and `RepoContext` (`useRepo`, `useLive`).
 - `src/ui/` shared components and forms. `src/i18n/` en/ur strings + formatters.
-- `supabase/migrations/` server schema + RLS; `supabase/tests/` PGlite tests.
+- `supabase/migrations/` server schema + RLS; `supabase/functions/` edge functions
+  (`places-nearby`, `ocr-pump`); `supabase/tests/` PGlite + function-helper tests.
 - `docs/checklists/Mx.md` manual device test checklists.
 
 ## Decisions (with reasons)
@@ -86,6 +87,8 @@ Env: copy `.env.example` → `.env.local` with `EXPO_PUBLIC_SUPABASE_URL` / `EXP
 20. **Station name**: Supabase Edge Function `places-nearby` → Google Places API (New) searchNearby
     (`gas_station`, 500 m, by distance). Key is the function secret `GOOGLE_PLACES_API_KEY`. Client times out
     after 5 s and falls back to the nearest station the user has used before (≤300 m). Always editable.
+21. After saving a new refuel the app opens the Fuel economy screen; if the interval just closed is
+    flagged (drop/high) and has no annotation, the cause dialog opens once. "Not now" dismisses it for good.
 22. **Service intervals (owner-approved 2026-11-07)**, in `src/domain/defaults.ts`, whichever comes first:
     bike oil 1500 km/60 d, chain oil 500 km/14 d, filter 3000 km/180 d, general service 30 d, wash 14 d;
     car oil 3500 km/90 d, filter 5000 km/180 d, general service 60 d, wash 14 d. Chain oil bike-only.
@@ -124,8 +127,11 @@ Env: copy `.env.example` → `.env.local` with `EXPO_PUBLIC_SUPABASE_URL` / `EXP
     still has to be saved. Cancel deletes the photo. Plate scan photo becomes the vehicle photo,
     reg-card scan the reg-card photo, pump scan the receipt photo, odometer scans attach to the reading
     (baseline or `source: 'ocr'`).
-21. After saving a new refuel the app opens the Fuel economy screen; if the interval just closed is
-    flagged (drop/high) and has no annotation, the cause dialog opens once. "Not now" dismisses it for good.
+30. **Fuel price = what the pump shows** (owner decision, M5): no external price source, no fetch, no
+    server table. The rate comes from the pump-display scan (M4) or typing at each refuel. New refuels
+    pre-fill the rate with the *last rate the user paid* (`domain/fuelPrice.ts` `lastPaidRate`: this vehicle's
+    latest refuel, else latest of a vehicle of the same type, else empty) as a *soft* value: if litres and
+    total are both entered (typed or scanned) the rate is derived from them instead (`applySoftRate`).
 
 ## Mileage rules (implemented in M2 — keep exactly)
 km/l_k = (odo_k − odo_{k−1}) / litres_{k−1}; every interval stored/shown raw, never skipped or smoothed;
@@ -150,3 +156,6 @@ Anomaly annotations live on refuel k (`anomaly_cause`, `anomaly_note`). Implemen
 - **M4 (done)**: scan number plate / registration card / odometer / pump display with editable confirm;
   ML Kit on device; Claude vision fallback for pump displays (`ocr-pump` edge function). Tests: 202 Jest + 17 server.
   Deploy: `supabase secrets set ANTHROPIC_API_KEY=...` and `supabase functions deploy ocr-pump`.
+- **M5 (done)**: fuel price from the pump display only (owner decision) with "last rate you paid" soft
+  pre-fill; Home pull-to-refresh (sync); app version in Settings; a11y label on the settings button; README.
+  Tests: 208 Jest + 17 server. No new native modules or server changes.

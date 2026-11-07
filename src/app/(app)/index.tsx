@@ -1,14 +1,19 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image, ScrollView, View } from 'react-native';
+import { Image, RefreshControl, ScrollView, View } from 'react-native';
 import { Button, Card, Menu, Text, useTheme } from 'react-native-paper';
 
 import { db } from '@/db/client';
 import { kvGet } from '@/db/kv';
 import { formatDate, formatKm, formatKmPerLitre, formatLitres, formatPKR, formatSignedPercent } from '@/i18n/format';
 import { useApp } from '@/state/app';
-import { useLive } from '@/state/RepoContext';
+import { useLive, useRepo } from '@/state/RepoContext';
+import { useSession } from '@/state/session';
+import { fileExists } from '@/services/photos';
+import { isSupabaseConfigured, supabase } from '@/services/supabase';
+import { supabaseRemote } from '@/services/supabaseRemote';
+import { runSync } from '@/sync/engine';
 import { useMileage } from '@/state/useMileage';
 import { useReminders } from '@/state/useReminders';
 import { ServiceStatusRow } from '@/ui/ServiceStatusRow';
@@ -20,6 +25,19 @@ export default function Home() {
   const lang = useApp((s) => s.language);
   const selectedId = useApp((s) => s.selectedVehicleId);
   const [menu, setMenu] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const repo = useRepo();
+  const userId = useSession((s) => s.user?.id);
+
+  // Pull to refresh: sync now. Failures are silent here (shown in Settings).
+  const onRefresh = async () => {
+    setRefreshing(true);
+    if (isSupabaseConfigured && userId) {
+      const r = await runSync({ db, repo, remote: supabaseRemote(supabase), userId, fileExists });
+      useApp.getState().setLastSync(r);
+    }
+    setRefreshing(false);
+  };
 
   const vehicles = useLive((r) => r.vehicles.list(), []);
   const vehicle = vehicles.find((v) => v.id === selectedId) ?? vehicles[0];
@@ -60,7 +78,11 @@ export default function Home() {
     router.push({ pathname, params: { vehicleId: vehicle.id } });
 
   return (
-    <ScrollView style={{ backgroundColor: theme.colors.background }} contentContainerStyle={{ padding: 16, gap: 12 }}>
+    <ScrollView
+      style={{ backgroundColor: theme.colors.background }}
+      contentContainerStyle={{ padding: 16, gap: 12 }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} />}
+    >
       <Menu
         visible={menu}
         onDismiss={() => setMenu(false)}

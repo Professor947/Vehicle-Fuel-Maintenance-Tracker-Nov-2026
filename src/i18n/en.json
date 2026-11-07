@@ -140,7 +140,9 @@
     "syncNow": "Sync now",
     "syncError": "Last sync failed: {{message}}",
     "account": "Account",
-    "signedInAs": "Signed in as {{phone}}"
+    "signedInAs": "Signed in as {{phone}}",
+    "version": "Version {{version}}",
+    "settingsA11y": "Settings"
   },
   "errors": {
     "required": "Required",
@@ -259,5 +261,8 @@
     "source_device": "Read on this phone",
     "source_cloud": "Read with Claude (online)",
     "mismatch": "Litres × rate doesn't match the total — please check."
+  },
+  "fuelPrice": {
+    "prefilledLast": "Last rate you paid ({{date}}) — scan the pump or change it if the display shows a different rate."
   }
 }
