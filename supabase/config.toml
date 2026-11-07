@@ -1,0 +1,17 @@
+# Minimal local-dev config for `supabase start` (requires Docker). See CLAUDE.md.
+project_id = "fueltrack"
+
+[auth]
+enabled = true
+site_url = "fueltrack://"
+
+[auth.sms]
+enable_signup = true
+enable_confirmations = true
+max_frequency = "60s"
+template = "Your FuelTrack code is {{ .Code }}"
+
+# Dev only: fixed OTPs for test numbers, no SMS sent.
+[auth.sms.test_otp]
+923001234567 = "123456"
+923001234568 = "123456"
